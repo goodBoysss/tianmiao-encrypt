@@ -1,0 +1,17 @@
+{
+    "name": "tianmiao/encrypt",
+    "description": "加密",
+    "autoload": {
+        "psr-4": {
+            "Tianmiao\\Encrypt\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "zhanglx",
+            "email": "zhanglx92@163.com"
+        }
+    ],
+    "require": {
+    }
+}
