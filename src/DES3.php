@@ -37,42 +37,58 @@ class DES3
     }
 
     /**
-     * @param string $str 需要加密的字符串
-     * @return string $crypt 加密后的字符串
+     * 获取php大版本
+     * @return false|string
+     */
+    public function getPhpVersion() {
+        return substr(PHP_VERSION, 0, 1);
+    }
+
+    /**
+     * @param string $input 需要加密的字符串
+     * @return string 加密后的字符串
      * @des 3DES加密
      */
-    public function encrypt($str) {
+    public function encrypt($input) {
         $key = $this->key;
         $iv = $this->iv;
-        $size = 8;
 
-        $str = $this->pkcs5_pad($str, $size);
-        $encryption_descriptor = @mcrypt_module_open(MCRYPT_3DES, '', 'cbc', '');
-        @mcrypt_generic_init($encryption_descriptor, $key, $iv);
-        $data = @mcrypt_generic($encryption_descriptor, $str);
-        @mcrypt_generic_deinit($encryption_descriptor);
-        @mcrypt_module_close($encryption_descriptor);
-        return base64_encode($data);
+        if ($this->getPhpVersion() < 7) {
+            $size = 8;
+            $input = $this->pkcs5_pad($input, $size);
+            $encryption_descriptor = @mcrypt_module_open(MCRYPT_3DES, '', 'cbc', '');
+            @mcrypt_generic_init($encryption_descriptor, $key, $iv);
+            $output = @mcrypt_generic($encryption_descriptor, $input);
+            @mcrypt_generic_deinit($encryption_descriptor);
+            @mcrypt_module_close($encryption_descriptor);
+        } else {
+            $output = openssl_encrypt($input, "des-ede3-cbc", $key, OPENSSL_RAW_DATA, $iv);
+        }
+        return base64_encode($output);
     }
 
 
     /**
-     * @param string $str 需要解密的字符串
-     * @return string $input 解密后的字符串
+     * @param string $input 需要解密的字符串
+     * @return string 解密后的字符串
      * @des 3DES解密
      */
-    function decrypt($str) {
+    function decrypt($input) {
         $key = $this->key;
         $iv = $this->iv;
 
-        $str = base64_decode($str);
-        $encryption_descriptor = @mcrypt_module_open(MCRYPT_3DES, '', 'cbc', '');
-        @mcrypt_generic_init($encryption_descriptor, $key, $iv);
-        $decrypted_data = @mdecrypt_generic($encryption_descriptor, $str);
-        @mcrypt_generic_deinit($encryption_descriptor);
-        @mcrypt_module_close($encryption_descriptor);
-        $decrypted_data = $this->pkcs5_unpad($decrypted_data);
-        return rtrim($decrypted_data);
+        $input = base64_decode($input);
+        if ($this->getPhpVersion() < 7) {
+            $encryption_descriptor = @mcrypt_module_open(MCRYPT_3DES, '', 'cbc', '');
+            @mcrypt_generic_init($encryption_descriptor, $key, $iv);
+            $output = @mdecrypt_generic($encryption_descriptor, $input);
+            @mcrypt_generic_deinit($encryption_descriptor);
+            @mcrypt_module_close($encryption_descriptor);
+            $output = $this->pkcs5_unpad($output);
+        } else {
+            $output = openssl_decrypt($input, "des-ede3-cbc", $key, OPENSSL_RAW_DATA, $iv);
+        }
+        return rtrim($output);
     }
 
     private function pkcs5_pad($text, $blocksize) {
